@@ -1,4 +1,4 @@
-import { LitElement, html, css } from 'lit';
+import {css, html, LitElement} from 'lit';
 
 export class PolygonApp extends LitElement {
   static properties = {
@@ -62,14 +62,13 @@ export class PolygonApp extends LitElement {
   }
 
   createPolygons() {
-    const count = Math.floor(Math.random() * 16) + 5; // Random number between 5 and 20
-    const newPolygons = Array.from({ length: count }, () => this.generateRandomPolygon());
-    this.polygons = [...this.polygons, ...newPolygons];
+    const count = Math.floor(Math.random() * 16) + 5;
+    this.polygons = Array.from({length: count}, () => this.generateRandomPolygon());
     this.saveToLocalStorage();
   }
 
   generateRandomPolygon() {
-    const vertices = Math.floor(Math.random() * 8) + 3; // Random number of vertices between 3 and 10
+    const vertices = Math.floor(Math.random() * 8) + 3;
     const points = [];
 
     for (let i = 0; i < vertices; i++) {
