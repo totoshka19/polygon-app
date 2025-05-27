@@ -113,7 +113,7 @@ export class WorkZone extends LitElement {
   }
 
   handleMouseDown(e) {
-    if (e.button === 0) { // Left mouse button
+    if (e.button === 0) {
       this.isDragging = true;
       this.lastX = e.clientX;
       this.lastY = e.clientY;
@@ -164,7 +164,7 @@ export class WorkZone extends LitElement {
   renderScaleMarks() {
     const marks = [];
     if (!this.workArea) {
-      return marks; // Return empty array if workArea is not yet available
+      return marks;
     }
     const step = 50 * this.scale;
     const startX = Math.floor(this.offsetX / step) * step;
@@ -178,10 +178,12 @@ export class WorkZone extends LitElement {
       `);
     }
 
-    for (let y = startY; y < startY + this.workArea.clientHeight + step; y += step) {
+    const height = this.workArea.clientHeight;
+    for (let y = startY; y < startY + height + step; y += step) {
+      const value = Math.round((height - (y - this.offsetY)) / this.scale);
       marks.push(html`
         <div class="scale-marks scale-marks-y" style="top: ${y - this.offsetY}px">
-          ${Math.round(y / this.scale)}
+          ${value}
         </div>
       `);
     }
