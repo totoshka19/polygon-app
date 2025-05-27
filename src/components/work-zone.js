@@ -15,10 +15,10 @@ export class WorkZone extends LitElement {
       background-color: white;
       border: 1px solid #ddd;
       border-radius: 4px;
-      padding: 20px;
+      padding: 20px 50px 50px 50px;
       min-height: 400px;
       position: relative;
-      overflow: hidden;
+      overflow: visible;
     }
 
     .work-area {
@@ -63,11 +63,13 @@ export class WorkZone extends LitElement {
     }
 
     .scale-marks-x {
-      bottom: 5px;
+      position: absolute;
+      bottom: -25px;
+      transform: translateX(-50%);
     }
 
     .scale-marks-y {
-      left: 5px;
+      left: -25px;
     }
 
     .polygon-container {
@@ -163,30 +165,59 @@ export class WorkZone extends LitElement {
 
   renderScaleMarks() {
     const marks = [];
-    if (!this.workArea) {
-      return marks;
-    }
     const step = 50 * this.scale;
     const startX = Math.floor(this.offsetX / step) * step;
     const startY = Math.floor(this.offsetY / step) * step;
+    const height = this.workArea?.clientHeight || 400;
+    const width = this.workArea?.clientWidth || 1500;
 
-    for (let x = startX; x < startX + this.workArea.clientWidth + step; x += step) {
+    const tolerance = 10;
+
+    for (let x = startX; x < startX + width + step; x += step) {
+      const value = Math.round(x / this.scale);
+      const markLeft = x - this.offsetX;
+
+      const isVisible = markLeft > -tolerance && markLeft < width + tolerance;
+
+      if (!isVisible && !(value === 0 && Math.round((height - this.offsetY) / this.scale) === 0)) {
+         continue;
+      }
+
+      if (value === 0 && Math.round((height - this.offsetY) / this.scale) === 0) {
+         continue;
+      }
+
       marks.push(html`
-        <div class="scale-marks scale-marks-x" style="left: ${x - this.offsetX}px">
-          ${Math.round(x / this.scale)}
+        <div class="scale-marks scale-marks-x" style="left: ${markLeft}px;">
+          ${value}
         </div>
       `);
     }
 
-    const height = this.workArea.clientHeight;
     for (let y = startY; y < startY + height + step; y += step) {
       const value = Math.round((height - (y - this.offsetY)) / this.scale);
+       if (value === 0 && Math.round(-this.offsetX / this.scale) === 0) {
+        continue;
+      }
       marks.push(html`
         <div class="scale-marks scale-marks-y" style="top: ${y - this.offsetY}px">
           ${value}
         </div>
       `);
     }
+
+     const zeroLeft = -this.offsetX;
+     const zeroTop = height - this.offsetY;
+     const isZeroVisible = zeroLeft > -tolerance && zeroLeft < width + tolerance &&
+                           zeroTop > -tolerance && zeroTop < height + tolerance;
+
+     if (Math.round(-this.offsetX / this.scale) === 0 && Math.round((height - this.offsetY) / this.scale) === 0 && isZeroVisible) {
+       marks.push(html`
+         <div class="scale-marks" style="left: ${zeroLeft}px; top: ${zeroTop}px;">
+           0
+         </div>
+       `);
+     }
 
     return marks;
   }
