@@ -84,7 +84,7 @@ export class PolygonApp extends LitElement {
   createPolygons() {
     const count = Math.floor(Math.random() * 16) + 5;
     const newPolygons = Array.from({length: count}, () => this.generateRandomPolygon());
-    this.bufferPolygons = [...this.bufferPolygons, ...newPolygons];
+    this.bufferPolygons = newPolygons;
     this.saveToLocalStorage();
   }
 
