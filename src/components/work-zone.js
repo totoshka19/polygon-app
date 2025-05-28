@@ -51,6 +51,7 @@ export class WorkZone extends LitElement {
       width: 100%;
       height: 100%;
       min-height: 400px;
+      overflow: hidden;
     }
 
     .grid {
@@ -89,12 +90,12 @@ export class WorkZone extends LitElement {
 
     .scale-marks-x {
       position: absolute;
-      bottom: -25px;
+      bottom: 25px;
       transform: translateX(-50%);
     }
 
     .scale-marks-y {
-      left: -25px;
+      left: 25px;
     }
 
     .polygon-container {
