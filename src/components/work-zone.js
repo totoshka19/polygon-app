@@ -7,6 +7,7 @@ export class WorkZone extends LitElement {
     offsetX: { type: Number },
     offsetY: { type: Number },
     isDragging: { type: Boolean },
+    errorMessage: { type: String },
   };
 
   static styles = css`
@@ -19,6 +20,30 @@ export class WorkZone extends LitElement {
       min-height: 400px;
       position: relative;
       overflow: visible;
+    }
+
+    .error-message {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #ff5252;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      z-index: 1000;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
     }
 
     .work-area {
@@ -91,6 +116,7 @@ export class WorkZone extends LitElement {
     this.isDragging = false;
     this.lastX = 0;
     this.lastY = 0;
+    this.errorMessage = '';
   }
 
   firstUpdated() {
@@ -105,6 +131,7 @@ export class WorkZone extends LitElement {
     window.addEventListener('mouseup', this.handleMouseUp.bind(this));
     this.workArea.addEventListener('dragover', this.handleDragOver.bind(this));
     this.workArea.addEventListener('drop', this.handleDrop.bind(this));
+    this.workArea.addEventListener('dragleave', this.handleDragLeave.bind(this));
   }
 
   handleWheel(e) {
@@ -143,24 +170,41 @@ export class WorkZone extends LitElement {
     e.dataTransfer.dropEffect = 'move';
   }
 
+  showError(message) {
+    this.errorMessage = message;
+    setTimeout(() => {
+      this.errorMessage = '';
+    }, 3000);
+  }
+
   handleDrop(e) {
     e.preventDefault();
-    const polygonData = JSON.parse(e.dataTransfer.getData('application/json'));
-    const rect = this.workArea.getBoundingClientRect();
-    const x = (e.clientX - rect.left - this.offsetX) / this.scale;
-    const y = (e.clientY - rect.top - this.offsetY) / this.scale;
 
-    const newPolygon = {
-      ...polygonData,
-      x,
-      y,
-    };
+    try {
+      const polygonData = JSON.parse(e.dataTransfer.getData('application/json'));
+      const rect = this.workArea.getBoundingClientRect();
 
-    this.dispatchEvent(new CustomEvent('polygon-dropped', {
-      detail: newPolygon,
-      bubbles: true,
-      composed: true
-    }));
+      const x = (e.clientX - rect.left - this.offsetX) / this.scale;
+      const y = (e.clientY - rect.top - this.offsetY) / this.scale;
+
+      const newPolygon = {
+        ...polygonData,
+        x,
+        y,
+      };
+
+      this.dispatchEvent(new CustomEvent('polygon-dropped', {
+        detail: newPolygon,
+        bubbles: true,
+        composed: true
+      }));
+    } catch (error) {
+      this.showError('Ошибка при добавлении полигона');
+    }
+  }
+
+  handleDragLeave(e) {
+    e.preventDefault();
   }
 
   renderScaleMarks() {
@@ -224,6 +268,11 @@ export class WorkZone extends LitElement {
 
   render() {
     return html`
+      ${this.errorMessage ? html`
+        <div class="error-message">
+          ${this.errorMessage}
+        </div>
+      ` : ''}
       <div class="work-area">
         <div class="grid">
           <div class="axis axis-x"></div>

@@ -1,8 +1,12 @@
 import {css, html, LitElement} from 'lit';
+import { POLYGON_COLORS } from '../constants/colors.js';
 
 export class PolygonApp extends LitElement {
   static properties = {
     polygons: { type: Array },
+    bufferPolygons: { type: Array },
+    workPolygons: { type: Array },
+    colorIndex: { type: Number },
   };
 
   static styles = css`
@@ -41,29 +45,46 @@ export class PolygonApp extends LitElement {
 
   constructor() {
     super();
-    this.polygons = [];
+    this.bufferPolygons = [];
+    this.workPolygons = [];
+    this.colorIndex = 0;
     this.loadFromLocalStorage();
   }
 
   loadFromLocalStorage() {
-    const savedPolygons = localStorage.getItem('polygons');
-    if (savedPolygons) {
-      this.polygons = JSON.parse(savedPolygons);
+    const savedData = localStorage.getItem('polygonAppData');
+    if (savedData) {
+      const data = JSON.parse(savedData);
+      this.bufferPolygons = data.bufferPolygons || [];
+      this.workPolygons = data.workPolygons || [];
+      this.colorIndex = data.colorIndex || 0;
+    } else {
+      this.bufferPolygons = [];
+      this.workPolygons = [];
+      this.colorIndex = 0;
     }
   }
 
   saveToLocalStorage() {
-    localStorage.setItem('polygons', JSON.stringify(this.polygons));
+    const dataToSave = {
+      bufferPolygons: this.bufferPolygons,
+      workPolygons: this.workPolygons,
+      colorIndex: this.colorIndex,
+    };
+    localStorage.setItem('polygonAppData', JSON.stringify(dataToSave));
   }
 
   resetData() {
-    this.polygons = [];
-    localStorage.removeItem('polygons');
+    this.bufferPolygons = [];
+    this.workPolygons = [];
+    this.colorIndex = 0;
+    localStorage.removeItem('polygonAppData');
   }
 
   createPolygons() {
     const count = Math.floor(Math.random() * 16) + 5;
-    this.polygons = Array.from({length: count}, () => this.generateRandomPolygon());
+    const newPolygons = Array.from({length: count}, () => this.generateRandomPolygon());
+    this.bufferPolygons = [...this.bufferPolygons, ...newPolygons];
     this.saveToLocalStorage();
   }
 
@@ -79,10 +100,13 @@ export class PolygonApp extends LitElement {
       points.push(`${x},${y}`);
     }
 
+    const color = POLYGON_COLORS[this.colorIndex];
+    this.colorIndex = (this.colorIndex + 1) % POLYGON_COLORS.length;
+
     return {
       id: Date.now() + Math.random(),
       points: points.join(' '),
-      fill: `hsl(${Math.random() * 360}, 70%, 50%)`,
+      fill: color,
     };
   }
 
@@ -94,10 +118,22 @@ export class PolygonApp extends LitElement {
           <button @click=${this.saveToLocalStorage}>Сохранить</button>
           <button @click=${this.resetData}>Сбросить</button>
         </div>
-        <buffer-zone .polygons=${this.polygons}></buffer-zone>
-        <work-zone .polygons=${this.polygons}></work-zone>
+        <buffer-zone .polygons=${this.bufferPolygons}></buffer-zone>
+        <work-zone .polygons=${this.workPolygons} @polygon-dropped=${this.handlePolygonDropped}></work-zone>
       </div>
     `;
+  }
+
+  handlePolygonDropped(event) {
+    const droppedPolygon = event.detail;
+
+    const updatedBufferPolygons = this.bufferPolygons.filter(polygon => polygon.id !== droppedPolygon.id);
+    this.bufferPolygons = updatedBufferPolygons;
+
+    this.workPolygons = [...this.workPolygons, droppedPolygon];
+
+    this.saveToLocalStorage();
+    this.requestUpdate();
   }
 }
 
